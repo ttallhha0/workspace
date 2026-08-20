@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RadarIPC_System — Proje Rehberi</title>
+<style>
+  :root{
+    --bg:#070d12;
+    --bg2:#0c151c;
+    --panel:#0f1a22;
+    --panel2:#12222c;
+    --border:#1c3a42;
+    --green:#39ff8f;
+    --green-dim:#1f7a4c;
+    --amber:#ffb454;
+    --red:#ff5d5d;
+    --text:#d7e6ea;
+    --text-dim:#8aa4ab;
+    --mono: "SF Mono", "Cascadia Code", "Fira Code", Consolas, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:radial-gradient(circle at 50% -10%, #0e2028 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.65;
+  }
+  a{color:var(--green);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  code, pre, .mono{font-family:var(--mono);}
+  code{
+    background:#0a1620;
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:1px 6px;
+    font-size:0.88em;
+    color:#a9f7c9;
+  }
+  pre{
+    background:#0a1620;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:14px 16px;
+    overflow-x:auto;
+    font-size:0.85em;
+    color:#c8e6d1;
+    line-height:1.55;
+  }
+  pre code{background:none;border:none;padding:0;color:inherit;}
+
+  /* ---------- Layout ---------- */
+  .shell{display:flex; min-height:100vh;}
+  nav.sidebar{
+    width:270px;
+    flex-shrink:0;
+    position:sticky;
+    top:0;
+    align-self:flex-start;
+    height:100vh;
+    overflow-y:auto;
+    background:linear-gradient(180deg, #0a1319, #060b0f);
+    border-right:1px solid var(--border);
+    padding:22px 16px 40px;
+  }
+  nav.sidebar .brand{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:22px;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--border);
+  }
+  nav.sidebar .brand .dot{
+    width:12px;height:12px;border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 10px var(--green), 0 0 20px var(--green);
+    animation:blink 2s infinite;
+  }
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+  nav.sidebar .brand span{font-weight:700; letter-spacing:0.5px; font-size:15px;}
+  nav.sidebar a.navlink{
+    display:block;
+    padding:7px 10px;
+    border-radius:6px;
+    font-size:13.5px;
+    color:var(--text-dim);
+    margin-bottom:2px;
+    border-left:2px solid transparent;
+  }
+  nav.sidebar a.navlink.sub{
+    padding-left:24px;
+    font-size:12.5px;
+  }
+  nav.sidebar a.navlink:hover{
+    background:var(--panel2);
+    color:var(--text);
+    text-decoration:none;
+  }
+  nav.sidebar a.navlink.active{
+    background:rgba(57,255,143,0.08);
+    color:var(--green);
+    border-left-color:var(--green);
+  }
+  nav.sidebar .group-title{
+    text-transform:uppercase;
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--text-dim);
+    margin:18px 10px 6px;
+    opacity:0.6;
+  }
+
+  main{flex:1; min-width:0;}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    padding:70px 48px 54px;
+    overflow:hidden;
+    border-bottom:1px solid var(--border);
+    background:
+      radial-gradient(circle at 85% 20%, rgba(57,255,143,0.10), transparent 60%),
+      #08111600;
+  }
+  .radar-sweep{
+    position:absolute;
+    top:-140px; right:-140px;
+    width:420px;height:420px;
+    border-radius:50%;
+    border:1px solid rgba(57,255,143,0.15);
+    background:
+      repeating-radial-gradient(circle, rgba(57,255,143,0.05) 0 2px, transparent 2px 40px);
+  }
+  .radar-sweep::before, .radar-sweep::after{
+    content:"";
+    position:absolute; inset:0; border-radius:50%;
+  }
+  .radar-sweep::before{
+    border:1px solid rgba(57,255,143,0.10);
+    inset:60px;
+  }
+  .radar-sweep::after{
+    inset:0;
+    background:conic-gradient(from 0deg, rgba(57,255,143,0.35), transparent 25%);
+    animation:sweep 4s linear infinite;
+    mix-blend-mode:screen;
+  }
+  @keyframes sweep{ to{ transform:rotate(360deg); } }
+  .hero h1{
+    font-size:34px; margin:0 0 10px; letter-spacing:0.3px;
+    background:linear-gradient(90deg, #eafff2, var(--green));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero .tag{
+    color:var(--text-dim); font-size:15.5px; max-width:700px;
+  }
+  .badges{margin-top:18px; display:flex; gap:8px; flex-wrap:wrap;}
+  .badge{
+    font-family:var(--mono);
+    font-size:11.5px;
+    padding:4px 10px;
+    border-radius:20px;
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    background:var(--panel);
+  }
+
+  section{
+    padding:38px 48px;
+    border-bottom:1px solid var(--border);
+    max-width:1000px;
+  }
+  section h2{
+    font-size:22px;
+    color:#eafff5;
+    margin:0 0 6px;
+    display:flex; align-items:center; gap:10px;
+  }
+  section h2 .num{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--green-dim);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:2px 8px;
+  }
+  section > .lead{
+    color:var(--text-dim);
+    margin-bottom:22px;
+    font-size:14.5px;
+  }
+  h3{font-size:17px; color:#dff5e8; margin:26px 0 10px;}
+  h4{font-size:14.5px; color:var(--amber); margin:18px 0 8px;}
+  p{margin:10px 0;}
+  ul, ol{padding-left:22px;}
+  li{margin:6px 0;}
+
+  .grid-3{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:18px 0;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .card h4{margin-top:0;}
+  .card .role{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--green);
+    background:rgba(57,255,143,0.08);
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:5px;
+    margin-bottom:8px;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:18px 0;
+    font-size:13.5px;
+  }
+  th, td{
+    text-align:left;
+    padding:9px 12px;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  th{
+    color:var(--amber);
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    background:var(--panel);
+  }
+  tr:hover td{background:rgba(57,255,143,0.03);}
+
+  .flow{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    margin:22px 0; font-family:var(--mono); font-size:13px;
+  }
+  .flow .box{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px 16px;
+    text-align:center;
+    min-width:140px;
+  }
+  .flow .box .t{font-weight:700; color:var(--green); display:block; margin-bottom:4px;}
+  .flow .box .s{color:var(--text-dim); font-size:11px;}
+  .flow .arrow{color:var(--text-dim); font-size:20px;}
+
+  .pipeline{
+    display:flex; flex-direction:column; gap:10px; margin:20px 0;
+  }
+  .pipeline .step{
+    display:flex; gap:14px; align-items:flex-start;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-left:3px solid var(--green-dim);
+    border-radius:8px;
+    padding:12px 16px;
+  }
+  .pipeline .step .n{
+    font-family:var(--mono); color:var(--green); font-weight:700;
+    min-width:22px;
+  }
+
+  .note{
+    border:1px solid var(--border);
+    border-left:3px solid var(--amber);
+    background:rgba(255,180,84,0.06);
+    border-radius:8px;
+    padding:12px 16px;
+    margin:16px 0;
+    font-size:13.5px;
+  }
+  .note.warn{border-left-color:var(--red); background:rgba(255,93,93,0.06);}
+  .note.ok{border-left-color:var(--green); background:rgba(57,255,143,0.06);}
+  .note strong{color:#fff;}
+
+  .struct-box{
+    background:#0a1620;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:0;
+    margin:16px 0;
+    overflow:hidden;
+    font-family:var(--mono);
+    font-size:13px;
+  }
+  .struct-box .hdr{
+    background:rgba(57,255,143,0.08);
+    padding:8px 14px;
+    color:var(--green);
+    font-weight:700;
+    border-bottom:1px solid var(--border);
+  }
+  .struct-box .field{
+    display:flex; justify-content:space-between;
+    padding:8px 14px;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+  }
+  .struct-box .field:last-child{border-bottom:none;}
+  .struct-box .fname{color:#e8f7ec;}
+  .struct-box .ftype{color:var(--text-dim);}
+  .struct-box .payload{
+    background:repeating-linear-gradient(45deg, rgba(255,180,84,0.06) 0 10px, rgba(255,180,84,0.02) 10px 20px);
+    padding:14px;
+    text-align:center;
+    color:var(--amber);
+  }
+
+  .method-card{
+    border:1px solid var(--border);
+    border-radius:10px;
+    margin:22px 0;
+    overflow:hidden;
+  }
+  .method-card .m-head{
+    display:flex; align-items:center; gap:12px;
+    padding:14px 18px;
+    background:var(--panel2);
+    border-bottom:1px solid var(--border);
+  }
+  .method-card .m-head .idx{
+    font-family:var(--mono);
+    width:30px;height:30px;
+    border-radius:50%;
+    background:var(--bg);
+    border:1px solid var(--green-dim);
+    color:var(--green);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+    flex-shrink:0;
+  }
+  .method-card .m-head h3{margin:0;}
+  .method-card .m-head .file{
+    margin-left:auto;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .method-card .m-body{padding:16px 20px;}
+  .tags{display:flex; gap:6px; flex-wrap:wrap; margin:10px 0;}
+  .tags span{
+    font-family:var(--mono); font-size:11px;
+    padding:3px 9px; border-radius:12px;
+    border:1px solid var(--border);
+  }
+  .tag-fast{color:var(--green); border-color:var(--green-dim);}
+  .tag-slow{color:var(--red); border-color:#5c2a2a;}
+  .tag-mid{color:var(--amber); border-color:#5c4a2a;}
+
+  .glossary dt{color:var(--green); font-weight:700; margin-top:12px; font-family:var(--mono); font-size:13.5px;}
+  .glossary dd{margin:4px 0 0 0; color:var(--text-dim); font-size:13.5px;}
+
+  .book{
+    display:flex; gap:16px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+    margin:14px 0;
+    background:var(--panel);
+  }
+  .book .icon{
+    width:44px;height:58px;
+    flex-shrink:0;
+    border-radius:4px;
+    background:linear-gradient(135deg, var(--green-dim), #0c2a1a);
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+    border:1px solid var(--border);
+  }
+  .book .lvl{
+    font-family:var(--mono); font-size:11px;
+    padding:2px 8px; border-radius:10px;
+    border:1px solid var(--border); color:var(--text-dim);
+    margin-left:8px;
+  }
+  .book h4{margin:0 0 4px;}
+  .book .why{color:var(--text-dim); font-size:13.5px; margin-top:6px;}
+
+  footer{
+    padding:30px 48px 60px;
+    color:var(--text-dim);
+    font-size:12.5px;
+  }
+
+  ::-webkit-scrollbar{width:10px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:#1c3a42; border-radius:6px;}
+
+  @media (max-width: 900px){
+    nav.sidebar{display:none;}
+    section, .hero{padding:28px 20px;}
+    .grid-3{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="sidebar" id="sidebar">
+    <div class="brand"><span class="dot"></span><span>RADAR_IPC // REHBER</span></div>
+    <a class="navlink" href="#genel-bakis">1. Genel Bakış</a>
+    <a class="navlink" href="#mimari">2. Mimari &amp; Veri Akışı</a>
+    <a class="navlink" href="#veri-yapilari">3. Veri Yapıları</a>
+    <a class="navlink" href="#klasor-yapisi">4. Klasör Yapısı</a>
+    <a class="navlink" href="#derleme">5. Derleme &amp; Çalıştırma</a>
+    <a class="navlink" href="#radar-yorumlama">6. Radar Yorumlama (IFF)</a>
+    <a class="navlink" href="#ipc-yontemleri">7. 5 IPC Yöntemi</a>
+    <a class="navlink sub" href="#ipc-tcp">— TCP</a>
+    <a class="navlink sub" href="#ipc-udp">— UDP</a>
+    <a class="navlink sub" href="#ipc-shm">— Shared Memory</a>
+    <a class="navlink sub" href="#ipc-rpc">— RPC / Named Pipe</a>
+    <a class="navlink sub" href="#ipc-pcie">— PCIe</a>
+    <a class="navlink" href="#avx2">8. AVX2 vs memcpy</a>
+    <a class="navlink" href="#csv">9. Performans CSV</a>
+    <a class="navlink" href="#sinirlamalar">10. Bilinen Sınırlamalar</a>
+    <a class="navlink" href="#sozluk">11. Sözlük</a>
+    <a class="navlink" href="#kitaplar">12. Kitap Önerileri</a>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <div class="radar-sweep"></div>
+      <h1>RadarIPC_System</h1>
+      <p class="tag">
+        Aynı büyük veriyi <strong>5 farklı IPC yöntemiyle</strong> iki uygulama arasında taşıyıp
+        gecikme / throughput / paket kaybı / veri bütünlüğünü karşılaştıran; ayrıca alınan
+        ham veriyi <strong>gerçek bir radar gibi</strong> yorumlayan (mesafe, açı, IFF dost-düşman
+        kimliği) bir Windows/C++ projesi. Bu sayfa, C bildiğini ama IPC/ağ/SIMD/radar
+        kavramlarına henüz hakim olmadığını varsayarak projeyi baştan sona anlatır.
+      </p>
+      <div class="badges">
+        <span class="badge">Windows + MinGW/MSVC</span>
+        <span class="badge">CMake + Ninja</span>
+        <span class="badge">AVX2 (SIMD)</span>
+        <span class="badge">TCP · UDP · Shared Memory · Named Pipe · PCIe-sim</span>
+        <span class="badge">3 .exe: Yonetici / RadarAnteni / KomutaMerkezi</span>
+      </div>
+    </div>
+
+    <!-- 1. GENEL BAKIŞ -->
+    <section id="genel-bakis">
+      <h2><span class="num">01</span> Genel Bakış</h2>
+      <p class="lead">Projenin "neden var olduğu" ve iki katmanının ne işe yaradığı.</p>
+
+      <p>
+        Bu proje aslında iki farklı sorunu tek bir programda birleştiriyor:
+      </p>
+      <div class="grid-3">
+        <div class="card">
+          <h4>🔬 Katman 1 — IPC Kıyaslaması</h4>
+          <p>Aynı veriyi 5 farklı yöntemle (TCP, UDP, Shared Memory, Named Pipe, PCIe-simülasyonu)
+          göndererek "hangisi ne kadar hızlı, ne kadar güvenilir?" sorusuna <strong>ölçülebilir</strong>
+          bir cevap üretir.</p>
+        </div>
+        <div class="card">
+          <h4>📡 Katman 2 — Radar Simülasyonu</h4>
+          <p>Taşınan veri rastgele üretilmiş bir "hedef" (koordinat + hız) içerir. Alıcı taraf bu ham
+          veriyi <strong>gerçek bir radar operatörü gibi</strong> yorumlar: mesafe, açı, dost mu düşman mı?</p>
+        </div>
+        <div class="card">
+          <h4>⚙️ Ortak Nokta</h4>
+          <p>Her iki katman da aynı soyut arayüz (<code>gonder</code>/<code>oku</code>) üzerinden çalışır,
+          bu sayede IPC yöntemi değişse de radar mantığı hiç değişmez — katmanlar birbirinden bağımsızdır.</p>
+        </div>
+      </div>
+
+      <p>
+        Neden önemli? Çünkü gerçek radar sistemlerinde de veri; anten (sensör) ile
+        komuta merkezi (işleyen bilgisayar) arasında <em>fiziksel olarak</em> bir yolla
+        (kablo, veri yolu, ağ) taşınır. Bu projede o taşıma katmanının 5 farklı
+        gerçek dünya karşılığı simüle ediliyor ve her birinin gecikme/güvenilirlik
+        maliyeti somut sayılarla gösteriliyor.
+      </p>
+    </section>
+
+    <!-- 2. MİMARİ -->
+    <section id="mimari">
+      <h2><span class="num">02</span> Mimari &amp; Veri Akışı</h2>
+      <p class="lead">3 bağımsız <code>.exe</code>, ortak bir arayüz üzerinden konuşuyor.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="role">1 — Kurulum</span>
+          <h4>Yonetici</h4>
+          <p>Kullanıcıdan yöntem (1-5) ve boyutu (MB) sorar, tek bir komut string'i
+          (<code>"MOD_TCP|10"</code>) olarak adlandırılmış boruya (<code>\\.\pipe\RadarModKontrol</code>)
+          yazar, sonra kapanır. Kalıcı bir süreç değildir.</p>
+        </div>
+        <div class="card">
+          <span class="role">2 — Server</span>
+          <h4>RadarAnteni</h4>
+          <p>Veri üreticisi. Rastgele hedef (x, y, hız) üretir, ham sinyal doldurur,
+          AVX2 ile checksum hesaplar, seçilen IPC yöntemiyle her saniye gönderir.
+          Hedefin kimliğini <strong>bilmez</strong> — hep <code>"BILINMEYEN"</code> yazar.</p>
+        </div>
+        <div class="card">
+          <span class="role">3 — Client</span>
+          <h4>KomutaMerkezi</h4>
+          <p>Veri tüketicisi. Veriyi okur, checksum doğrular, gecikme/throughput/kayıp
+          hesaplar, <strong>radar yorumlamasını</strong> (mesafe/açı/IFF) yapar, ekrana basar
+          ve <code>benchmark_sonuclari.csv</code>'ye satır ekler.</p>
+        </div>
+      </div>
+
+      <h3>Çalışma sırası (adım adım)</h3>
+      <div class="pipeline">
+        <div class="step"><span class="n">1</span><div>
+          <strong>RadarAnteni</strong> ve <strong>KomutaMerkezi</strong>'i istediğin sırada başlat —
+          ikisi de <code>Yonetici</code>'nin borusu oluşana kadar <code>Sleep(500)</code> ile bekler, çökmezler.
+        </div></div>
+        <div class="step"><span class="n">2</span><div>
+          <strong>Yonetici</strong>'yi çalıştır: "1-5 arası yöntem?" ve "kaç MB?" sorularını cevapla.
+        </div></div>
+        <div class="step"><span class="n">3</span><div>
+          <strong>Yonetici</strong>, <code>\\.\pipe\RadarModKontrol</code> adlı named pipe'a
+          <code>"MOD_TCP|10"</code> gibi birleşik bir komut yazar (mod + boyut, <code>|</code> ile ayrılmış),
+          bunu sırayla <strong>her iki</strong> uygulamaya iletir, sonra kapanır.
+        </div></div>
+        <div class="step"><span class="n">4</span><div>
+          <strong>RadarAnteni</strong> ve <strong>KomutaMerkezi</strong>, komut string'ini <code>|</code>
+          karakterinden ayrıştırıp (parse) hem hangi <code>*Driver.h</code>'ı kullanacaklarını
+          hem de kaç MB'lık <code>RadarPaketi</code> ayıracaklarını öğrenirler.
+        </div></div>
+        <div class="step"><span class="n">5</span><div>
+          <strong>RadarAnteni</strong> saniyede bir paket üretip seçilen IPC sürücüsüyle gönderir;
+          <strong>KomutaMerkezi</strong> okur, doğrular, yorumlar, ekrana basar, CSV'ye yazar. Bu döngü
+          sürekli tekrar eder — yeni bir <code>Yonetici</code> komutu gelirse boyut/yöntem canlı değişir.
+        </div></div>
+      </div>
+
+      <h3>Neden hepsi tek bir soyut arayüz (<code>RadarIletisimArayuzu.h</code>) üzerinden?</h3>
+      <p>
+        C'de alışık olduğun "fonksiyon işaretçisi tablosu" mantığının C++ karşılığı:
+        soyut bir sınıf (<code>interface</code>), 4 sanal metot tanımlar —
+        <code>baslat</code>, <code>gonder(const void*, size_t)</code>, <code>oku(void*, size_t)</code>,
+        <code>kapat</code> — ve her IPC yöntemi bu arayüzü <strong>uygulayan</strong> (implement eden) ayrı
+        bir sınıf/header olarak yazılmış (<code>TcpDriver.h</code>, <code>UdpDriver.h</code>, ...).
+      </p>
+      <p>
+        <code>main.cpp</code> içinde hangi sürücünün kullanılacağına bir <code>if/else</code> zinciriyle
+        (komuttaki mod string'ine göre) karar verilir; sonrasında kod hangi yöntemi kullandığını
+        <strong>bilmeden</strong> sadece <code>gonder()</code>/<code>oku()</code> çağırır. Bu, C'deki
+        "aynı imzaya sahip fonksiyonları farklı şekilde implemente edip bir <code>struct</code> içinde
+        işaretçi olarak taşımak" desenine denk — C++ bunu <code>virtual</code> metotlarla otomatikleştiriyor.
+      </p>
+      <p>
+        <code>gonder</code>/<code>oku</code>'nun <code>const void*</code> + <code>size_t</code> alması
+        (compile-time sabit bir <code>struct</code> tipi değil) sayesinde boyut tamamen çalışma anında
+        (runtime) belirlenebiliyor — 10MB de olur, 200MB de, yeniden derleme gerekmez.
+      </p>
+    </section>
+
+    <!-- 3. VERİ YAPILARI -->
+    <section id="veri-yapilari">
+      <h2><span class="num">03</span> Veri Yapıları</h2>
+      <p class="lead"><code>RadarVerisi.h</code> — taşınan verinin gerçek "kablo üzerindeki" hali.</p>
+
+      <p>
+        Taşınan paket iki parçaya bölünmüş: sabit boyutlu bir <strong>başlık (header)</strong> ve
+        çalışma anında boyutu belirlenen bir <strong>ham sinyal dolgusu (payload)</strong>. Bu, ağ
+        protokolü tasarımında çok yaygın bir desen: sabit boyutlu kısmı önce oku (kaç byte
+        okuyacağını bilirsin), sonra o kısımdaki bir alana (<code>ham_sinyal_boyutu</code>) bakıp
+        değişken kısmı oku.
+      </p>
+
+      <div class="struct-box">
+        <div class="hdr">RadarPaketi (bellekte ardışık / contiguous)</div>
+        <div class="field"><span class="fname">RadarBaslik baslik</span><span class="ftype">sabit boyut</span></div>
+      </div>
+
+      <div class="struct-box">
+        <div class="hdr">↳ RadarBaslik (detay)</div>
+        <div class="field"><span class="fname">timestamp</span><span class="ftype">gönderim anı (steady_clock)</span></div>
+        <div class="field"><span class="fname">hedefler[5]</span><span class="ftype">Hedef dizisi — sadece [0] kullanılıyor</span></div>
+        <div class="field"><span class="fname">veri_checksum</span><span class="ftype">AVX2 ile hesaplanan bütünlük özeti</span></div>
+        <div class="field"><span class="fname">ham_sinyal_boyutu</span><span class="ftype">payload'ın kaç byte olduğu</span></div>
+      </div>
+
+      <div class="struct-box">
+        <div class="hdr">↳ Hedef (radar kontağı)</div>
+        <div class="field"><span class="fname">x, y</span><span class="ftype">koordinat (km)</span></div>
+        <div class="field"><span class="fname">hiz</span><span class="ftype">hedefin hızı</span></div>
+        <div class="field"><span class="fname">tip</span><span class="ftype">hep <code>"BILINMEYEN"</code> — kimliği anten bilmez!</span></div>
+      </div>
+
+      <div class="struct-box">
+        <div class="payload">ham sinyal (RadarPaketi::olustur(boyutMB) ile heap'te ayrılır)<br>
+        başında %50 ihtimalle IFF_DOST_KODU gizlenmiş olabilir</div>
+      </div>
+
+      <div class="note">
+        <strong>Neden başlık + ayrı payload?</strong> Böylece <code>RadarBaslik</code> sabit boyutlu
+        kalır (compile-time <code>sizeof</code> bilinir), ama toplam paket boyutu
+        <code>RadarPaketi::olustur(boyutMB)</code> çağrısıyla çalışma anında istenen büyüklükte
+        (heap'te) ayrılabilir. TCP/UDP/Named Pipe gibi "akış" yöntemlerinde önce başlığı
+        sabit boyutuyla okuyup içindeki <code>ham_sinyal_boyutu</code>'na göre kalan kısmı okumak,
+        protokol tasarımının temel bir tekniğidir.
+      </div>
+    </section>
+
+    <!-- 4. KLASÖR YAPISI -->
+    <section id="klasor-yapisi">
+      <h2><span class="num">04</span> Klasör Yapısı</h2>
+      <p class="lead">Nerede ne var, hızlı bakış.</p>
+<pre>apps/
+  Yonetici/main.cpp          Mod seçim menüsü (kısa ömürlü)
+  RadarAnteni/main.cpp       Veri üreticisi (Server)
+  KomutaMerkezi/main.cpp     Veri tüketicisi (Client) + radarYorumla()
+include/RadarIPC/
+  Ana Dosya/
+    RadarIletisimArayuzu.h   Ortak soyut arayüz (baslat/gonder/oku/kapat)
+    RadarVerisi.h            Hedef, RadarBaslik, RadarPaketi
+  Avx/
+    AvxYardimci.h            AVX2 checksum + kopyalama yardımcıları
+  IPC/
+    IPC_1_TCP/TcpDriver.h
+    IPC_2_UDP/UdpDriver.h
+    IPC_3_Shared_Memory/SharedMemoryDriver.h
+    IPC_4_RPC/RpcDriver.h              (Named Pipe tabanlı)
+    IPC_5_PCIe/PcieDriver.h            (Paylaşımlı bellek + interrupt simülasyonu)
+CMakeLists.txt</pre>
+      <p>
+        Yeni bir IPC yöntemi eklemek istersen: (1) <code>RadarIletisimArayuzu.h</code>'ı uygulayan
+        yeni bir <code>*Driver.h</code> yaz, (2) her iki <code>main.cpp</code>'deki mod seçim
+        <code>if/else</code> zincirine bir satır ekle. Radar yorumlama mantığına <strong>hiç dokunmana
+        gerek yok</strong> — o katman IPC'den tamamen habersiz.
+      </p>
+    </section>
+
+    <!-- 5. DERLEME -->
+    <section id="derleme">
+      <h2><span class="num">05</span> Derleme &amp; Çalıştırma</h2>
+      <p class="lead">Windows + MinGW-w64 (g++) veya MSVC, CMake + Ninja.</p>
+
+<pre><code>cmake -B build -G Ninja
+cmake --build build</code></pre>
+      <p>Çıktılar: <code>build/Yonetici.exe</code>, <code>build/RadarAnteni.exe</code>, <code>build/KomutaMerkezi.exe</code>.</p>
+
+      <h3>Çalıştırma sırası</h3>
+      <p>3 ayrı terminalde, herhangi bir sırada (Yonetici en son da olabilir):</p>
+<pre><code>.\build\RadarAnteni.exe
+.\build\KomutaMerkezi.exe
+.\build\Yonetici.exe</code></pre>
+
+      <p><code>Yonetici</code> çalışınca:</p>
+<pre><code>Seciminiz (1-5): 3
+Kac MB'lik ham sinyal gonderilsin (ornegin 10 veya 100): 25</code></pre>
+
+      <div class="note ok">
+        <strong>Yeniden derleme gerekmez.</strong> Boyut tamamen çalışma anındaki bir girdi.
+        Aynı testi farklı boyutlarla tekrarlamak için <code>RadarAnteni</code>/<code>KomutaMerkezi</code>'i
+        kapatmana gerek yok — sadece <code>Yonetici</code>'yi tekrar çalıştır, yeni komutta boyut
+        yeniden ayrılır.
+      </div>
+
+      <div class="note">
+        <strong>Ölçüm hassasiyeti:</strong> Gecikme, Windows'ta ~15ms kaba çözünürlüğe sahip
+        <code>system_clock</code> yerine, <code>QueryPerformanceCounter</code> tabanlı
+        <code>steady_clock</code> ile ölçülüyor — bu yüzden CSV'de <code>4.254</code> ms gibi
+        gerçek, ondalıklı gecikme değerleri görürsün.
+      </div>
+    </section>
+
+    <!-- 6. RADAR YORUMLAMA -->
+    <section id="radar-yorumlama">
+      <h2><span class="num">06</span> Radar Yorumlama: Mesafe / Açı / IFF</h2>
+      <p class="lead">Bu proje artık salt bir IPC hız testi değil — basit ama gerçekçi bir radar yorumlama simülasyonu.</p>
+
+      <p>
+        Kilit tasarım kararı: <strong>RadarAnteni (sensör) hedefin kimliğini bilmez.</strong>
+        Sadece ham bir kontak (x/y, hız) üretir ve <code>tip</code> alanını hep
+        <code>"BILINMEYEN"</code> gönderir. Kimlik tayini tamamen alıcı tarafta
+        (<code>KomutaMerkezi</code>) yapılır — gerçek radar sistemlerinde de böyledir: anten sadece
+        yansıma toplar, "bu bizim uçağımız mı?" sorusunun cevabı ayrı bir sorgu-yanıt protokolüyle
+        (IFF) çözülür.
+      </p>
+
+      <div class="flow">
+        <div class="box"><span class="t">x, y (km)</span><span class="s">ham koordinat</span></div>
+        <div class="arrow">→</div>
+        <div class="box"><span class="t">mesafe = √(x²+y²)</span><span class="s">km, radara uzaklık</span></div>
+      </div>
+      <div class="flow">
+        <div class="box"><span class="t">x, y (km)</span><span class="s">ham koordinat</span></div>
+        <div class="arrow">→</div>
+        <div class="box"><span class="t">açı = atan2(y, x)</span><span class="s">derece, 0–360 (bearing)</span></div>
+      </div>
+
+      <h3>IFF (Identify Friend or Foe) — dost/düşman kod çözme</h3>
+      <p>
+        Gerçek IFF sistemlerinde dost bir hava aracı, radar "sorguladığında" özel bir transponder
+        kodu ile yanıt verir. Bu projede benzetimi şöyle:
+      </p>
+      <div class="pipeline">
+        <div class="step"><span class="n">1</span><div>
+          <strong>RadarAnteni</strong>, her paket için %50 ihtimalle geçerli kodu
+          (<code>IFF_DOST_KODU</code>) ham sinyalin <strong>başına</strong> yerleştirir.
+          Yerleştirmezse (düşman / bilinmeyen / arızalı transponder senaryosu), o baytlar
+          sıfır/gürültü olarak kalır.
+        </div></div>
+        <div class="step"><span class="n">2</span><div>
+          <strong>KomutaMerkezi</strong>, aldığı ham sinyalin başındaki baytları çözüp koda bakar.
+        </div></div>
+        <div class="step"><span class="n">3</span><div>
+          Kod doğruysa → <strong style="color:var(--green)">DOST</strong>. Kod yoksa/yanlışsa →
+          <strong style="color:var(--red)">DUSMAN</strong>. Not: "yanıt alınamadı" durumu da
+          DUSMAN sayılır — gerçek IFF doktrininde de sessizlik iyimser yorumlanmaz, tehdit
+          olarak ele alınır.
+        </div></div>
+        <div class="step"><span class="n">4</span><div>
+          Checksum bozuksa kimlik tayini de <strong>güvenilmez</strong> sayılır:
+          <code>"BILINMEYEN (veri bozuk)"</code> yazılır. Bozuk veriden yanlışlıkla DOST/DUSMAN
+          çıkarılmaz — bu, sistemin en önemli güvenlik prensibi.
+        </div></div>
+        <div class="step"><span class="n">5</span><div>
+          Kimlik <strong>DUSMAN</strong> VE mesafe <strong>&lt; 500 km</strong> ise, ekrana bir
+          yakın-tehdit uyarısı basılır.
+        </div></div>
+      </div>
+
+      <div class="note warn">
+        <strong>Neden önemli:</strong> Bu mantık, IPC katmanının veri bütünlüğünü nasıl gerçek
+        sonuçlara bağladığını gösteriyor — checksum sadece "bayt tutuyor mu" sorusu değil,
+        doğrudan "bu bir tehdit mi, yoksa bozuk veri mi?" kararını etkiliyor. UDP gibi kayıp
+        yaşanabilen bir yöntemde bu bağ özellikle kritik.
+      </div>
+
+      <p>Mantık <code>KomutaMerkezi/main.cpp</code> içindeki <code>radarYorumla()</code> fonksiyonunda;
+      sonuçlar (<code>mesafe_km</code>, <code>aci_derece</code>, <code>kimlik</code>) hem ekrana hem
+      CSV'ye yazılır.</p>
+    </section>
+
+    <!-- 7. IPC YÖNTEMLERİ -->
+    <section id="ipc-yontemleri">
+      <h2><span class="num">07</span> 5 Haberleşme (IPC) Yöntemi</h2>
+      <p class="lead">Aynı işi ("2 process arası büyük veri taşı") 5 farklı seviyede çözen yollar.</p>
+
+      <table>
+        <tr><th>#</th><th>Yöntem</th><th>Katman</th><th>Teslim garantisi</th><th>Tipik hız</th></tr>
+        <tr><td>1</td><td>TCP</td><td>OS ağ yığını (soket)</td><td>Garantili, sıralı</td><td>Orta</td></tr>
+        <tr><td>2</td><td>UDP</td><td>OS ağ yığını (soket)</td><td>Yok — kayıp olabilir</td><td>Değişken (kayıpla)</td></tr>
+        <tr><td>3</td><td>Shared Memory</td><td>OS bellek yönetimi</td><td>Garantili (aynı makinede)</td><td>Çok yüksek</td></tr>
+        <tr><td>4</td><td>RPC (Named Pipe)</td><td>OS IPC primitive'i</td><td>Garantili, sıralı</td><td>Orta-yüksek</td></tr>
+        <tr><td>5</td><td>PCIe (simülasyon)</td><td>Donanım benzetimi</td><td>Garantili (simüle)</td><td>Yüksek</td></tr>
+      </table>
+
+      <div class="method-card" id="ipc-tcp">
+        <div class="m-head"><span class="idx">1</span><h3>TCP</h3><span class="file">TcpDriver.h</span></div>
+        <div class="m-body">
+          <div class="tags"><span class="tag-mid">bağlantı tabanlı</span><span class="tag-fast">güvenilir</span><span class="tag-mid">sıralı</span></div>
+          <p>
+            Bağlantı kurulan (connection-oriented), garantili sıralı teslimatlı bir protokol.
+            C'de <code>socket()</code>/<code>connect()</code>/<code>accept()</code> ailesini
+            bildiğini varsayarsak: TCP bir <strong>byte akışıdır</strong>, mesaj sınırı yoktur.
+            Bu yüzden <code>send()</code> tek çağrıda "10MB gitti" demez — kısmi yazabilir.
+            Bu sürücü bu yüzden verinin tamamı gidene/gelene kadar <strong>1MB'lik parçalar
+            halinde tekrar tekrar</strong> <code>send</code>/<code>recv</code> döngüsü çalıştırır
+            ("loop until all bytes transferred" deseni — soket programlamada klasik bir tuzak
+            ve klasik bir çözüm).
+          </p>
+          <p>
+            Neden diğerlerinden yavaş olabilir: her katmanda (uygulama → kernel soket tamponu →
+            ağ yığını → loopback → karşı taraf) kopyalama ve bağlantı yönetimi (ACK'ler, akış
+            kontrolü) var — bunlar güvenilirliğin bedeli.
+          </p>
+        </div>
+      </div>
+
+      <div class="method-card" id="ipc-udp">
+        <div class="m-head"><span class="idx">2</span><h3>UDP</h3><span class="file">UdpDriver.h</span></div>
+        <div class="m-body">
+          <div class="tags"><span class="tag-fast">bağlantısız</span><span class="tag-slow">kayıp olabilir</span><span class="tag-fast">"gönder-unut"</span></div>
+          <p>
+            Bağlantısız, "atıp unutmak" felsefesiyle çalışan bir protokol — <strong>bilinçli
+            olarak yavaşlatılmamış</strong>, çünkü UDP'nin var olma sebebi zaten hız için
+            güvenilirlikten ödün vermek (TCP zaten güvenilir teslim istiyorsan orada).
+          </p>
+          <p>
+            Veri ~60KB'lik parçalara bölünür (tek bir UDP datagramının pratik/güvenli üst
+            sınırı buna yakındır — daha büyükleri IP seviyesinde fragmentasyona uğrar ve kayıp
+            riski artar), her parçaya bir header (<code>transferId</code>/<code>index</code>/<code>total</code>)
+            eklenir ve art arda, <strong>arada hiç bekleme yapılmadan</strong> gönderilir.
+          </p>
+          <p>
+            Alıcı tarafta parçalar <strong>reassembly</strong> (yeniden birleştirme) ile toplanır;
+            bir transfer 2 saniye içinde tamamlanmazsa zaman aşımına uğrar ve eksik parça
+            sayısından <code>kayip_yuzdesi</code> hesaplanır. Loopback'te bile (aynı makine
+            içinde network stack üzerinden) kayıp görülebilir, çünkü sorun fiziksel kablo değil
+            — gönderenin kernel soket tamponunu doldurma hızı, alıcının okuma hızını geçtiğinde
+            paketler sessizce düşürülür.
+          </p>
+        </div>
+      </div>
+
+      <div class="method-card" id="ipc-shm">
+        <div class="m-head"><span class="idx">3</span><h3>Shared Memory</h3><span class="file">SharedMemoryDriver.h</span></div>
+        <div class="m-body">
+          <div class="tags"><span class="tag-fast">kopyalama yok denecek kadar az</span><span class="tag-fast">aynı makine</span></div>
+          <p>
+            İki process, <code>CreateFileMappingA</code> ile <strong>aynı fiziksel RAM sayfasını</strong>
+            kendi adres alanlarına eşler (<code>MapViewOfFile</code>). Bu, TCP/UDP'deki gibi veriyi
+            "kopyalayıp göndermek" değil — iki process de <em>aynı</em> belleğe farklı sanal adreslerden
+            bakıyor. Yazan process bir yere yazınca, okuyan process ekstra bir kopyalama yapmadan
+            aynı veriyi görebilir.
+          </p>
+          <p>
+            Sorun: paylaşılan bellek kendi başına "veri hazır, oku" sinyali vermez — bu yüzden bir
+            Windows <strong>Event</strong> nesnesi (zil/kapı zili gibi düşünebilirsin — C'deki
+            <code>pthread_cond_t</code>'ye yakın bir senkronizasyon primitive'i) kullanılır: yazan
+            "verdim" der (<code>SetEvent</code>), okuyan bu sinyali bekler (<code>WaitForSingleObject</code>),
+            böylece okuyucu veri henüz yazılmadan okumaya başlamaz (race condition önlenir).
+          </p>
+          <p>Kopyalama en aza indiği için, ölçümlerde genelde en yüksek throughput bu yöntemden çıkar.</p>
+        </div>
+      </div>
+
+      <div class="method-card" id="ipc-rpc">
+        <div class="m-head"><span class="idx">4</span><h3>RPC (Named Pipe)</h3><span class="file">RpcDriver.h</span></div>
+        <div class="m-body">
+          <div class="tags"><span class="tag-mid">senkron</span><span class="tag-fast">güvenilir</span></div>
+          <p>
+            Windows Named Pipe üzerinden çalışır — <code>CreateNamedPipe</code>/<code>ConnectNamedPipe</code>
+            ile kurulan, <code>WriteFile</code>/<code>ReadFile</code> ile kullanılan, sanki bir dosyaya
+            yazıp okuyormuş gibi davranan bir kanal. "RPC" adı burada gerçek bir RPC framework'ünü
+            (gRPC, Windows RPC/DCOM gibi) değil, <strong>senkron, çağrı-yanıt tarzı</strong> bir his
+            veren bu iletişim modelini kastediyor — Yonetici'nin mod komutunu iletmek için kullandığı
+            <code>\\.\pipe\RadarModKontrol</code> da zaten aynı named pipe mekanizmasının bir örneği.
+          </p>
+          <p>
+            C'deki Unix domain socket / FIFO deneyimine benzetebilirsin: iki process, dosya sistemi
+            benzeri bir isimle (<code>\\.\pipe\...</code>) aynı kanala bağlanır, kernel bu kanalın
+            veri tamponunu ve sıralamasını yönetir.
+          </p>
+        </div>
+      </div>
+
+      <div class="method-card" id="ipc-pcie">
+        <div class="m-head"><span class="idx">5</span><h3>PCIe (simülasyon)</h3><span class="file">PcieDriver.h</span></div>
+        <div class="m-body">
+          <div class="tags"><span class="tag-fast">DMA benzetimi</span><span class="tag-fast">interrupt benzetimi</span></div>
+          <p>
+            Gerçek bir donanım kartının (örneğin bir radar alıcı kartının) CPU ile nasıl konuştuğunu
+            <strong>yazılımla taklit eder</strong>: Paylaşımlı bellek (Shared Memory'dekine benzer)
+            + bir <strong>Event</strong> ile "kesme" (interrupt) sinyali.
+          </p>
+          <p>
+            Gerçek donanımda şu olur: bir PCIe kart, verisini CPU'yu hiç uğraştırmadan doğrudan
+            RAM'e yazar (<strong>DMA — Direct Memory Access</strong>), işi bitince CPU'ya "veri
+            hazır" demek için bir <strong>interrupt</strong> (kesme sinyali) gönderir; CPU sürekli
+            "bitti mi, bitti mi?" diye sormaz (polling yapmaz), interrupt gelene kadar başka işle
+            ilgilenebilir. Burada Windows <code>Event</code> nesnesi tam olarak bu interrupt'ın
+            yazılımsal karşılığı olarak kullanılıyor.
+          </p>
+          <div class="note warn">
+            <strong>Bilinen kısıtlama:</strong> <code>CreateFileMappingA</code>, <code>"Global\\"</code>
+            isim alanında açılıyor; bu <code>SeCreateGlobalPrivilege</code> gerektirir ve bazı
+            kısıtlı/sandbox oturumlarında <code>ERROR_ACCESS_DENIED</code> ile başarısız olabilir.
+            Normal bir masaüstü kullanıcı oturumunda sorun çıkarmaz.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. AVX2 -->
+    <section id="avx2">
+      <h2><span class="num">08</span> AVX2 Neden Eklendi? (ve <code>memcpy</code>'dan Farkı)</h2>
+      <p class="lead">SIMD'e giriş: "aynı anda birden çok sayı üzerinde tek komutla işlem".</p>
+
+      <p>
+        <strong>AVX2</strong>, Intel/AMD işlemcilerin CPU seviyesinde aynı anda 32 byte (256 bit)
+        veriyi <strong>tek bir komutla</strong> işleyebildiği bir SIMD (Single Instruction, Multiple
+        Data) komut setidir. Normal bir C döngüsü (<code>for (i=0;i<n;i++) sum += arr[i];</code>)
+        genelde işlemciye "bir sayıyı al, işle" der; SIMD ise "32 byte'lık bir bloğu tek seferde al,
+        hepsini birden işle" der.
+      </p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h4>1️⃣ avxChecksum — asıl eklenme sebebi</h4>
+          <p>
+            Büyük veri gönderilirken (özellikle UDP'de) paket kaybı/bozulma riski var.
+            <code>RadarAnteni</code>, göndermeden önce ham sinyal üzerinden AVX2 ile hızlı bir özet
+            çıkarıp <code>RadarBaslik.veri_checksum</code>'a koyar. <code>KomutaMerkezi</code> aynı
+            özeti kendi tarafında tekrar hesaplar; eşleşmezse <strong>"BOZUK!"</strong> basar.
+          </p>
+          <div class="note">
+            Bu bir kriptografik hash (SHA/CRC32) <strong>değildir</strong> — amacı güvenlik değil,
+            100MB gibi büyük veride bile gözle görülür performans kaybı yaratmadan
+            "gerçekten sağlam mı ulaştı?" sorusuna hızlı cevap vermek.
+          </div>
+        </div>
+        <div class="card">
+          <h4>2️⃣ avxKopyala — hızlı kopyalama</h4>
+          <p>
+            <code>SharedMemoryDriver</code> ve <code>PcieDriver</code>, veriyi paylaşımlı RAM'e/den
+            taşırken <code>std::memcpy</code> yerine 32 byte'lık bloklar halinde
+            <code>_mm256_loadu_si256</code> / <code>_mm256_storeu_si256</code> kullanan
+            <code>avxKopyala</code>'yı kullanır.
+          </p>
+        </div>
+        <div class="card">
+          <h4>🔧 Derleyici bayrağı</h4>
+          <p>
+            <code>CMakeLists.txt</code>, <code>-mavx2</code> (GCC/Clang) veya <code>/arch:AVX2</code>
+            (MSVC) ile AVX2 desteğini açar. Bu bayrak olmadan <code>_mm256_...</code> fonksiyonları
+            derlenmez. 2013 öncesi (Haswell öncesi) çok eski bir CPU'da "Illegal instruction" hatası
+            alırsan bu bayrağı kaldırıp <code>memcpy</code>/byte-byte döngüye dönmen gerekir.
+          </p>
+        </div>
+      </div>
+
+      <h3><code>avxKopyala</code> ile <code>memcpy</code> arasındaki gerçek fark</h3>
+      <table>
+        <tr><th></th><th><code>memcpy</code></th><th><code>avxKopyala</code></th></tr>
+        <tr>
+          <td>Mantık</td>
+          <td>Genel amaçlı komutlar (genelde 8 byte/adım); derleyici/CRT bazen dahilen SIMD'e
+          düşebilir ama <strong>garanti değil</strong>, CPU'ya/boyuta göre çalışma anında seçilir.</td>
+          <td>Açıkça, garantili olarak her adımda 32 byte taşır — "elle" bir strateji.</td>
+        </tr>
+        <tr>
+          <td>Gerçek kazanç</td>
+          <td colspan="2">
+            Dürüst olmak gerekirse: modern GCC/Clang/MSVC'nin <code>memcpy</code>'ı büyük buffer'larda
+            zaten dahilen AVX/AVX2 (bazen AVX-512) kullanıyor — bu projede elle yazılan
+            <code>avxKopyala</code>, <code>memcpy</code> ile <strong>başa baş</strong>, hatta
+            bazen daha yavaş bile olabiliyor. Ölçülen gecikmeler zaten OS uyandırma/saat çözünürlüğü
+            gibi başka etkenlerle domine ediliyor.
+          </td>
+        </tr>
+      </table>
+
+      <h4>El yazımı SIMD gerçekten ne zaman kazandırır?</h4>
+      <ul>
+        <li><strong>Kopyalama sırasında ek bir işlem de yapılıyorsa</strong> — <code>avxChecksum</code>
+        gibi: kopyalarken/tararken aynı anda toplama/XOR/karşılaştırma yapılabiliyorsa.</li>
+        <li><strong>Küçük, sabit boyutlu, çok sık tekrarlanan bloklar</strong> — ses/görüntü işleme,
+        piksel dönüştürme, sinyal filtreleme.</li>
+        <li><strong>Vektörel matematik</strong> (toplama, çarpma, karşılaştırma) — ham kopyalamadan
+        çok daha net bir SIMD kazanç alanı.</li>
+      </ul>
+      <div class="note ok">
+        <strong>Bu projedeki pratik sonuç:</strong> <code>avxChecksum</code> gerçek bir kazanım;
+        <code>avxKopyala</code> ise daha çok "SIMD nasıl kullanılır" göstergesi — <code>memcpy</code>
+        ile değiştirilse ölçülebilir bir fark olmazdı.
+      </div>
+    </section>
+
+    <!-- 9. CSV -->
+    <section id="csv">
+      <h2><span class="num">09</span> Performans Karşılaştırması (CSV)</h2>
+      <p class="lead"><code>KomutaMerkezi</code>, çalıştığı klasörde <code>benchmark_sonuclari.csv</code>'ye her mesaj için bir satır ekler.</p>
+<pre><code>mod,boyut_mb,gecikme_ms,throughput_mbs,checksum_durumu,kayip_yuzdesi,mesafe_km,aci_derece,kimlik
+MOD_TCP,10,4.254,2350.73,SAGLAM,0,1145.56,44.5049,DOST
+MOD_UDP,10,20.174,2478.44,SAGLAM,0,572.225,24.908,DOST
+MOD_SHARED_MEMORY,10,0.512,19531.2,SAGLAM,0,861.768,43.0251,DUSMAN</code></pre>
+      <p>
+        5 yöntemi de aynı boyutla sırayla çalıştırıp bu dosyayı Excel'de açarsan, hangi yöntemin
+        hangi boyutta ne kadar hızlı olduğunu ve ne sıklıkla veri kaybettiğini
+        (<code>kayip_yuzdesi</code>, sadece UDP'de &gt;0 olabilir) yan yana karşılaştırabilirsin.
+      </p>
+      <div class="note">
+        Dosya <code>.gitignore</code>'da — her makinede/testte yeniden üretilir, repoya girmez.
+        Farklı bir testten önce silmek istersen elle silebilirsin; silinmezse yeni satırlar sonuna eklenir.
+      </div>
+    </section>
+
+    <!-- 10. SINIRLAMALAR -->
+    <section id="sinirlamalar">
+      <h2><span class="num">10</span> Bilinen Sınırlamalar</h2>
+      <ul>
+        <li>
+          <strong>UDP paket kaybı bir hata değil, bilinçli bir tasarım kararı:</strong> UDP'ye
+          hiçbir yapay yavaşlatma eklenmiyor. Loopback'te bile büyük veriyi binlerce ~60KB parçaya
+          bölüp beklemeden göndermek kayba yol açabilir; 2 saniyede tamamlanmazsa "kayıp" sayılır.
+          Kaybı sıfıra indirmek istiyorsan diğer 4 yöntem zaten bunun için var.
+        </li>
+        <li>
+          <strong>PCIe modu kısıtlı ortamlarda çalışmayabilir:</strong> <code>"Global\\"</code>
+          isim alanı <code>SeCreateGlobalPrivilege</code> gerektirir; bazı sandbox oturumlarında
+          <code>ERROR_ACCESS_DENIED</code> verebilir.
+        </li>
+        <li>
+          <strong>Tek hedef gösteriliyor:</strong> <code>hedefler[5]</code> dizisi olsa da şu an
+          sadece <code>hedefler[0]</code> doldurulup gösteriliyor.
+        </li>
+      </ul>
+    </section>
+
+    <!-- 11. SÖZLÜK -->
+    <section id="sozluk">
+      <h2><span class="num">11</span> Sözlük</h2>
+      <p class="lead">C bilen ama bu terimlere yeni gelen biri için hızlı referans.</p>
+      <dl class="glossary">
+        <dt>IPC (Inter-Process Communication)</dt>
+        <dd>İki ayrı process'in (birbirinin belleğine doğrudan erişemeyen iki program) veri
+        paylaşmasının genel adı. Socket, named pipe, shared memory hepsi birer IPC yöntemidir.</dd>
+
+        <dt>Socket</dt>
+        <dd>Ağ üzerinden (veya aynı makinede loopback ile) iletişim kurmak için işletim sisteminin
+        verdiği bir "kapı" — C'de <code>socket()</code>/<code>connect()</code>/<code>send()</code>/
+        <code>recv()</code> ile kullanılır. TCP ve UDP birer socket türüdür.</dd>
+
+        <dt>Named Pipe</dt>
+        <dd>Dosya sistemindeki bir isimle (<code>\\.\pipe\isim</code>) erişilen, kernel tarafından
+        yönetilen bir IPC kanalı. Unix'teki FIFO'ya benzer ama Windows'a özgü ek özellikleri vardır.</dd>
+
+        <dt>Shared Memory (paylaşımlı bellek)</dt>
+        <dd>İki process'in aynı fiziksel RAM bölgesini kendi sanal adres alanlarına eşlemesi —
+        veri kopyalamadan paylaşılabilir, ama senkronizasyon (kim ne zaman yazdı/okudu) ayrıca
+        çözülmesi gereken bir problemdir.</dd>
+
+        <dt>DMA (Direct Memory Access)</dt>
+        <dd>Bir donanım aygıtının, CPU'yu aracı yapmadan doğrudan RAM'e veri yazabilmesi/okuyabilmesi.</dd>
+
+        <dt>Interrupt (kesme)</dt>
+        <dd>Bir donanım/olayın CPU'ya "bir şey oldu, bak" demesi için gönderdiği sinyal — CPU'nun
+        sürekli "bitti mi?" diye sorup durmasına (polling) alternatif.</dd>
+
+        <dt>Checksum</dt>
+        <dd>Bir verinin üzerinden hızlıca hesaplanan, verinin bozulup bozulmadığını kontrol etmeye
+        yarayan küçük bir özet sayı. Kriptografik güvenlik sağlamaz, sadece bütünlük kontrolü yapar.</dd>
+
+        <dt>SIMD (Single Instruction, Multiple Data)</dt>
+        <dd>Bir CPU komutunun, tek seferde bir sayı değil bir "vektör" (birden çok sayı) üzerinde
+        işlem yapması. AVX2 bunun x86 CPU'lardaki bir uygulamasıdır (256 bit = 32 byte'lık vektörler).</dd>
+
+        <dt>Throughput</dt>
+        <dd>Birim zamanda taşınan veri miktarı (örn. MB/s). "Ne kadar hızlı akıyor?" sorusunun cevabı.</dd>
+
+        <dt>Latency (gecikme)</dt>
+        <dd>Bir verinin gönderilmesiyle karşı tarafta alınması arasındaki süre. "Ne kadar bekledi?"
+        sorusunun cevabı — throughput'tan farklı bir metriktir (çok yüksek throughput'lu bir hat
+        yine de yüksek gecikmeli olabilir).</dd>
+
+        <dt>Packet loss (paket kaybı)</dt>
+        <dd>Gönderilen verinin bir kısmının karşı tarafa hiç ulaşmaması. Genelde alıcının/ağın
+        veriyi işleme hızının, gönderim hızını geçememesinden kaynaklanır.</dd>
+
+        <dt>IFF (Identify Friend or Foe)</dt>
+        <dd>Radar sistemlerinde, tespit edilen bir hedefin dost mu düşman mı olduğunu anlamak için
+        kullanılan sorgu-yanıt (transponder kodu) protokolü. II. Dünya Savaşı'nda geliştirilmiştir.</dd>
+
+        <dt>Bearing (yön/açı)</dt>
+        <dd>Bir referans noktasından (burada radar) hedefe olan açısal yön, genelde derece (0-360) olarak.</dd>
+      </dl>
+    </section>
+
+    <!-- 12. KİTAPLAR -->
+    <section id="kitaplar">
+      <h2><span class="num">12</span> Kitap Önerileri (İngilizce, Basit, Metroda Okunur)</h2>
+      <p class="lead">
+        Bu projedeki her teorik konuya (IPC/OS, ağ/TCP-UDP, düşük seviye performans/SIMD, radar)
+        karşılık gelen, ağır ders kitabı olmayan, akıcı İngilizce ile yazılmış kitaplar. Zorluk
+        seviyeleri "kolay" → "orta" şeklinde işaretli; metro/otobüs gibi kısa, bölünmüş okuma
+        seansları için uygun, kısa bölümlü kitaplar seçildi.
+      </p>
+
+      <div class="book">
+        <div class="icon">📗</div>
+        <div>
+          <h4>Operating Systems: Three Easy Pieces <span class="lvl">kolay</span></h4>
+          <div class="mono" style="color:var(--text-dim); font-size:12.5px;">Remzi &amp; Andrea Arpaci-Dusseau — ücretsiz, çevrimiçi mevcut</div>
+          <p class="why">
+            Bu projedeki <code>Yonetici</code>/<code>RadarAnteni</code>/<code>KomutaMerkezi</code>'in
+            birbirinden bağımsız process olması, named pipe, shared memory ve senkronizasyon
+            (Event/<code>WaitForSingleObject</code>) kavramlarının <strong>arkasındaki işletim
+            sistemi mantığını</strong> anlamak için ideal. Şaşırtıcı derecede sohbet havasında,
+            esprili ve kısa bölümler halinde yazılmış — akademik bir ders kitabı gibi ağır değil.
+          </p>
+        </div>
+      </div>
+
+      <div class="book">
+        <div class="icon">📘</div>
+        <div>
+          <h4>Head First Networking <span class="lvl">kolay</span></h4>
+          <div class="mono" style="color:var(--text-dim); font-size:12.5px;">Al Anderson &amp; Ryan Benedetti — O'Reilly</div>
+          <p class="why">
+            TCP'nin neden "akış", UDP'nin neden "atıp unut" olduğunu, paketlerin/parçalanmanın
+            (fragmentation) ne olduğunu görsel, bol örnekli, çok az jargonla anlatıyor. Bu
+            projedeki <code>TcpDriver</code>/<code>UdpDriver</code> davranışının "neden böyle"
+            olduğunu sezgisel olarak anlamana yardımcı olur.
+          </p>
+        </div>
+      </div>
+
+      <div class="book">
+        <div class="icon">📙</div>
+        <div>
+          <h4>Write Great Code, Vol. 1: Understanding the Machine <span class="lvl">kolay-orta</span></h4>
+          <div class="mono" style="color:var(--text-dim); font-size:12.5px;">Randall Hyde — No Starch Press</div>
+          <p class="why">
+            CPU'nun sayıları/belleği nasıl işlediğini (kayıtlar, cache, komut seviyesinde paralellik)
+            ağır matematik olmadan, pratik programcı diliyle anlatıyor. <code>AvxYardimci.h</code>'daki
+            "neden <code>memcpy</code> tek seferde 8 byte, SIMD ise 32 byte taşıyabiliyor?" sorusuna
+            zemin hazırlayan en yumuşak giriş kitaplarından biri.
+          </p>
+        </div>
+      </div>
+
+      <div class="book">
+        <div class="icon">📕</div>
+        <div>
+          <h4>The Invention That Changed the World <span class="lvl">kolay (anlatı/hikaye)</span></h4>
+          <div class="mono" style="color:var(--text-dim); font-size:12.5px;">Robert Buderi</div>
+          <p class="why">
+            Teknik değil, tarihsel-anlatı (narrative nonfiction) tarzında: II. Dünya Savaşı'nda
+            radarın nasıl geliştirildiğini, IFF'in neden ve nasıl doğduğunu gerçek olaylarla
+            anlatıyor. Bu proje IFF/mesafe/açı kavramlarını simüle ediyor — bu kitap onlara
+            <strong>gerçek dünya bağlamı ve hikaye</strong> katıyor. Metroda en "kolay yutulan" seçenek.
+          </p>
+        </div>
+      </div>
+
+      <div class="book">
+        <div class="icon">📓</div>
+        <div>
+          <h4>Designing Data-Intensive Applications <span class="lvl">orta (ama çok akıcı)</span></h4>
+          <div class="mono" style="color:var(--text-dim); font-size:12.5px;">Martin Kleppmann — O'Reilly</div>
+          <p class="why">
+            Bonus/ileri seviye: güvenilirlik, checksum'lar, ağ bölünmeleri, "en azından bir kere
+            teslim" vs "en fazla bir kere teslim" gibi kavramları — yani bu projenin TCP/UDP/kayıp
+            yönetimi kısmının <strong>büyük resmini</strong> — akıcı bir düzyazıyla anlatıyor.
+            Diğerlerinden biraz daha yoğun ama şaşırtıcı derecede okunabilir; projeyi bitirdikten
+            sonra "peki bu fikirler gerçek sistemlerde nasıl büyüyor?" sorusuna cevap arıyorsan iyi bir adım.
+          </p>
+        </div>
+      </div>
+
+      <div class="note ok">
+        <strong>Öneri sırası:</strong> Önce <em>Three Easy Pieces</em>'ın IPC/süreç bölümleri +
+        <em>Head First Networking</em> (projeyi anlamak için en doğrudan faydası olanlar),
+        sonra <em>The Invention That Changed the World</em> (keyifli, metro için "hafif" kitap),
+        en sonda isteğe bağlı olarak <em>Write Great Code</em> ve <em>Designing Data-Intensive Applications</em>.
+      </div>
+    </section>
+
+    <footer>
+      RadarIPC_System proje rehberi · Bu sayfa proje dokümantasyonundan (README) türetilmiştir,
+      tek dosya halinde, çevrimdışı okunabilir.
+    </footer>
+  </main>
+</div>
+
+<script>
+  const links = Array.from(document.querySelectorAll('nav.sidebar a.navlink'));
+  const targets = links.map(l => document.querySelector(l.getAttribute('href'))).filter(Boolean);
+  function onScroll(){
+    let current = targets[0];
+    const y = window.scrollY + 120;
+    for(const t of targets){
+      if(t.offsetTop <= y) current = t;
+    }
+    links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + current.id));
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+</script>
+</body>
+</html>
