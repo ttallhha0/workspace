@@ -15,6 +15,94 @@ Bu ikisi birlikte "neden sunucu thread kullanıyor?" sorusunun cevabını canlı
 gösteriyor: `tcp_istemci`, 4-5 bağlantıyı aynı anda açtığında, sunucu bunları
 sırayla değil, **eş zamanlı** olarak cevaplayabiliyor.
 
+## Windows'ta Sıfırdan Çalıştırma (Klonla → Derle → Çalıştır)
+
+Bu kod hem macOS/Linux hem Windows'ta çalışır (bkz. [Windows'ta Çalışır mı?](#windowsta-çalışır-mı)
+bölümü). Aşağıdaki adımlar, boş bir Windows makinesinde depoyu indirip 5 dakikada
+çalıştırmanı sağlar.
+
+### 1. Gerekli programları kur
+
+| Program | Neden gerekli | İndirme |
+|---|---|---|
+| **Git for Windows** | Depoyu bilgisayarına indirmek (`git clone`) için | [git-scm.com/download/win](https://git-scm.com/download/win) |
+| **CMake** | Projeyi derleme sistemine göre yapılandırmak için | [cmake.org/download](https://cmake.org/download) — kurulumda **"Add CMake to the system PATH"** seçeneğini işaretle |
+| **Bir C++ derleyici** (aşağıdan birini seç) | Kodu derlemek için | — |
+
+Derleyici için iki seçeneğin var — **hangisini seçersen seç, aşağıdaki adımlar aynı**:
+
+- **Seçenek A — Visual Studio (en kolay)**: [Visual Studio Community](https://visualstudio.microsoft.com/downloads/)
+  kur, kurulum ekranında **"Desktop development with C++"** iş yükünü işaretle.
+  Bu, MSVC derleyicisini ve CMake entegrasyonunu otomatik kurar.
+- **Seçenek B — MinGW-w64 (RadarIPC_System'ın kullandığı kurulum)**: [MSYS2](https://www.msys2.org/)
+  kur, ardından **"MSYS2 MinGW64"** terminalini açıp şunu çalıştır:
+  ```bash
+  pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
+  ```
+
+### 2. Depoyu klonla
+
+PowerShell veya Git Bash'te:
+
+```powershell
+git clone https://github.com/ttallhha0/workspace.git
+cd workspace\tcp_thread_ornegi
+```
+
+### 3. Derle
+
+**Visual Studio kullanıyorsan** (normal PowerShell'de):
+```powershell
+cmake -B build -G "Visual Studio 17 2022"
+cmake --build build --config Debug
+```
+> Not: Visual Studio "multi-config" bir üretici olduğu için çıktı `build\Debug\` klasörüne gider —
+> yani `.exe` dosyaları `build\Debug\tcp_sunucu.exe` yolunda olur.
+
+**MSYS2/MinGW kullanıyorsan** ("MSYS2 MinGW64" terminalinde):
+```bash
+cmake -B build -G Ninja
+cmake --build build
+```
+> Bu durumda çıktı doğrudan `build\` klasörüne gider: `build\tcp_sunucu.exe`.
+
+### 4. Çalıştır
+
+İki ayrı terminal aç (ikisi de aynı `tcp_thread_ornegi` klasöründe olmalı).
+
+**Terminal 1 — sunucu** (Visual Studio ile derlediysen `build\Debug\...`, MinGW ile derlediysen `build\...`):
+```powershell
+.\build\Debug\tcp_sunucu.exe
+```
+veya
+```powershell
+.\build\tcp_sunucu.exe
+```
+
+**Terminal 2 — istemci** (5 paralel bağlantı):
+```powershell
+.\build\Debug\tcp_istemci.exe 5
+```
+veya
+```powershell
+.\build\tcp_istemci.exe 5
+```
+
+Çalışma mantığı ve beklenen çıktı, aşağıdaki [Çalıştırma](#çalıştırma) bölümünde
+macOS için gösterilenle **tamamen aynı** — sadece komut satırında `.exe` uzantısı var.
+
+### Windows'a özel küçük notlar
+
+- **"Windows Defender Güvenlik Duvarı" uyarısı**: `tcp_sunucu.exe`'yi ilk çalıştırdığında
+  Windows bir izin penceresi açabilir ("bu uygulamanın ağ erişimine izin ver mi?").
+  **"İzin ver"** de — sunucu sadece `localhost` (kendi bilgisayarın) üzerinden dinlediği
+  için bu tamamen güvenli.
+- **"Bind basarisiz. Port 54000 kullaniliyor" hatası**: Bir önceki `tcp_sunucu.exe`
+  hâlâ arka planda çalışıyor olabilir. Görev Yöneticisi'nden (`Ctrl+Shift+Esc`) kapat
+  veya farklı bir terminalde `Ctrl+C` ile durdur.
+- **`cmake` komutu tanınmıyor hatası**: CMake kurulumunda PATH seçeneğini işaretlemediysen,
+  terminali kapatıp yeniden açman ya da CMake'i yeniden (PATH seçeneğiyle) kurman gerekir.
+
 ## Mantık — Adım Adım
 
 ### Sunucu tarafı (`src/sunucu.cpp`)
@@ -126,22 +214,12 @@ değişmedi; sadece platforma özel 6-7 küçük detay `soket_ortak.h`'a taşın
 `RadarIPC_System`'daki `TcpDriver.h`'ın neden Windows'a özel yazıldığını
 (WSAStartup, SOCKET tipi vs.) şimdi tanıyacaksın.
 
-### Windows'ta derleme
+### Windows'ta derleme — adım adım komutlar
 
-**MSVC (Visual Studio) ile:**
-```powershell
-cmake -B build -G "Visual Studio 17 2022"
-cmake --build build
-```
-
-**MinGW-w64 + Ninja ile** (RadarIPC_System'ın kullandığı kurulum):
-```powershell
-cmake -B build -G Ninja
-cmake --build build
-```
-
-İkisinde de CMake, `if(WIN32)` bloğu sayesinde `ws2_32` kütüphanesini otomatik
-bağlar — elle bir şey eklemen gerekmez.
+Depoyu klonlama, derleyici kurma ve tam derleme/çalıştırma komutları için yukarıdaki
+[Windows'ta Sıfırdan Çalıştırma](#windowsta-sıfırdan-çalıştırma-klonla--derle--çalıştır)
+bölümüne bak. Kısaca: CMake, `if(WIN32)` bloğu sayesinde `ws2_32` kütüphanesini hem
+MSVC hem MinGW için otomatik bağlar — elle bir şey eklemen gerekmez.
 
 > **MinGW notu:** `std::thread`/`std::mutex` kullanabilmek için MinGW-w64'ün
 > "posix" thread modeliyle (veya güncel bir "win32" thread modeli sürümüyle —
